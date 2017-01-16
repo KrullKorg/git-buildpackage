@@ -180,3 +180,10 @@ class TestBuildpackage(ComponentTestBase):
         self._test_buildpackage(repo, ['--git-no-pristine-tar', '--git-compression-level=9'])
         out = subprocess.check_output(["file", "../hello-debhelper_2.8.orig.tar.gz"])
         ok_("max compression" in out)
+
+    @RepoFixtures.quilt30
+    def test_pre_export_buildpackage(self):
+        """Test that building with a pre export command works"""
+        self._test_buildpackage(repo, ['--git-export-dir=../foo/bar',
+                                       '--git-preexport="date > $(GBP_EXPORT_DIR)/preexported"'])
+        ok_(os.path.isfile('../foo/bar/preexported'))

@@ -488,7 +488,7 @@ def setup_pbuilder(options, repo, native):
 
 def disable_hooks(options):
     """Disable all hooks (except for builder)"""
-    for hook in ['cleaner', 'postexport', 'prebuild', 'postbuild', 'posttag']:
+    for hook in ['cleaner', 'preexport', 'postexport', 'prebuild', 'postbuild', 'posttag']:
         if getattr(options, hook):
             gbp.log.info("Disabling '%s' hook" % hook)
             setattr(options, hook, '')
@@ -583,6 +583,9 @@ def build_parser(name, prefix=None):
     cmd_group.add_config_file_option(option_name="prebuild", dest="prebuild",
                                      help="hook to run before a build, "
                                           "default is '%(prebuild)s'")
+    cmd_group.add_config_file_option(option_name="preexport", dest="preexport",
+                                     help="hook to run before exporting the source tree but after export dir is created, "
+                                          "default is '%(preexport)s'")
     cmd_group.add_config_file_option(option_name="postexport", dest="postexport",
                                      help="hook to run after exporting the source tree, "
                                           "default is '%(postexport)s'")
@@ -700,6 +703,14 @@ def main(argv):
         if not options.tag_only:
             output_dir = prepare_output_dir(options.export_dir)
             tarball_dir = options.tarball_dir or output_dir
+
+            # Run preexport hook
+            if options.export_dir and options.preexport:
+                Hook('Preexport', options.preexport,
+                    extra_env=Hook.md(hook_env,
+                                      {'GBP_GIT_DIR': repo.git_dir,
+                                       'GBP_EXPORT_DIR': output_dir})
+                    )(dir=output_dir)
 
             # Get/build the upstream tarball if necessary. We delay this in
             # case of a postexport hook so the hook gets a chance to modify the
